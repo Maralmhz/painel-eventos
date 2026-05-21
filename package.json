@@ -1,0 +1,21 @@
+{
+  "name": "painel-eventos",
+  "version": "1.0.0",
+  "description": "Sistema de gest\u00e3o e controle de eventos automotivos",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "eventos",
+    "automotivo",
+    "dashboard"
+  ],
+  "author": "Maralmhz",
+  "license": "MIT"
+}
