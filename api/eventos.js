@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+const { neon } = require('@neondatabase/serverless');
 
 const sql = neon(process.env.STORAGE_URL);
 
@@ -28,7 +28,7 @@ async function ensureTable() {
   `;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -53,12 +53,12 @@ export default async function handler(req, res) {
         maoObra: Number(r.mao_obra),
         pecas: Number(r.pecas),
         cota: Number(r.cota),
-        numeroNegado: r.numero_negado,
+        numeroNegado: r.numero_negado || '',
         qtdVidros: Number(r.qtd_vidros),
         valorVidros: Number(r.valor_vidros),
         qtdAcordos: Number(r.qtd_acordos),
         valorAcordos: Number(r.valor_acordos),
-        observacoes: r.observacoes
+        observacoes: r.observacoes || ''
       }));
       return res.status(200).json(eventos);
     }
@@ -72,8 +72,9 @@ export default async function handler(req, res) {
         VALUES
           (${e.id}, ${e.filial}, ${e.nome}, ${e.tipoPessoa}, ${e.tipoEvento}, ${e.placa}, ${e.oficina},
            ${e.dataEntrada || null}, ${e.dataSaida || null},
-           ${e.maoObra}, ${e.pecas}, ${e.cota}, ${e.numeroNegado},
-           ${e.qtdVidros}, ${e.valorVidros}, ${e.qtdAcordos}, ${e.valorAcordos}, ${e.observacoes})
+           ${e.maoObra}, ${e.pecas}, ${e.cota}, ${e.numeroNegado || ''},
+           ${e.qtdVidros}, ${e.valorVidros}, ${e.qtdAcordos}, ${e.valorAcordos}, ${e.observacoes || ''})
+        ON CONFLICT (id) DO NOTHING
       `;
       return res.status(201).json({ ok: true });
     }
@@ -85,8 +86,8 @@ export default async function handler(req, res) {
           filial=${e.filial}, nome=${e.nome}, tipo_pessoa=${e.tipoPessoa}, tipo_evento=${e.tipoEvento},
           placa=${e.placa}, oficina=${e.oficina}, data_entrada=${e.dataEntrada || null},
           data_saida=${e.dataSaida || null}, mao_obra=${e.maoObra}, pecas=${e.pecas}, cota=${e.cota},
-          numero_negado=${e.numeroNegado}, qtd_vidros=${e.qtdVidros}, valor_vidros=${e.valorVidros},
-          qtd_acordos=${e.qtdAcordos}, valor_acordos=${e.valorAcordos}, observacoes=${e.observacoes}
+          numero_negado=${e.numeroNegado || ''}, qtd_vidros=${e.qtdVidros}, valor_vidros=${e.valorVidros},
+          qtd_acordos=${e.qtdAcordos}, valor_acordos=${e.valorAcordos}, observacoes=${e.observacoes || ''}
         WHERE id=${e.id}
       `;
       return res.status(200).json({ ok: true });
@@ -98,9 +99,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    return res.status(405).json({ error: 'Método não permitido' });
+    return res.status(405).json({ error: 'Metodo nao permitido' });
   } catch (err) {
-    console.error(err);
+    console.error('API Error:', err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
