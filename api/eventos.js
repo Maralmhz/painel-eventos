@@ -1,6 +1,17 @@
 const { neon } = require('@neondatabase/serverless');
 
-const sql = neon(process.env.STORAGE_URL);
+const dbUrl =
+  process.env.STORAGE_URL ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.NEON_DATABASE_URL;
+
+if (!dbUrl) {
+  console.error('ERRO: Nenhuma variavel de conexao com o banco encontrada.');
+  console.error('Variaveis disponiveis:', Object.keys(process.env).filter(k => k.includes('DATA') || k.includes('POSTGRES') || k.includes('STORAGE') || k.includes('NEON')));
+}
+
+const sql = dbUrl ? neon(dbUrl) : null;
 
 async function ensureTable() {
   await sql`
@@ -34,6 +45,15 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  if (!sql) {
+    return res.status(500).json({
+      error: 'Banco de dados nao configurado. Verifique a variavel de ambiente STORAGE_URL no Vercel.',
+      envKeys: Object.keys(process.env).filter(k =>
+        k.includes('DATA') || k.includes('POSTGRES') || k.includes('STORAGE') || k.includes('NEON')
+      )
+    });
+  }
 
   try {
     await ensureTable();
@@ -102,6 +122,6 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Metodo nao permitido' });
   } catch (err) {
     console.error('API Error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message, stack: err.stack });
   }
 };
