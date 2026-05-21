@@ -473,12 +473,6 @@
       <main class="charts">
         <div class="table-card">
           <h2>Controles e filtros</h2>
-          <div class="toolbar">
-            <button class="btn-secondary" id="exportarJson">Backup JSON</button>
-            <label class="file-label btn-success" for="importarJson">Subir backup JSON</label>
-            <input id="importarJson" type="file" accept="application/json" class="hidden" />
-            <button class="btn-danger" id="limparTudo">Apagar base</button>
-          </div>
           <div class="filters">
             <div class="field">
               <label for="filtroFilial">Filial</label>
@@ -1015,7 +1009,7 @@
     });
 
     document.getElementById('limparTudo').addEventListener('click', () => {
-      const modal = document.getElementById('modalApagarBase');
+      const modal = document.getElementById('477');
       modal.style.display = 'flex';
     });
 
@@ -1092,6 +1086,14 @@
     <!-- Modal de confirmação para apagar base -->
   <div id="modalApagarBase" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: white; padding: 30px; border-radius: 10px; max-width: 400px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+
+                <div class="toolbar">
+            <button class="btn-secondary" id="exportarJson">Backup JSON</button>
+            <label class="file-label btn-success" for="importarJson">Subir backup JSON</label>
+            <input id="importarJson" type="file" accept="application/json" class="hidden" />
+            <button class="btn-danger" id="limparTudo">Apagar base</button>
+          </div>
+
       <h3 style="margin-top: 0; color: #c62828;">⚠️ Atenção</h3>
       <p style="margin: 20px 0; font-size: 16px;">Tem certeza que deseja apagar toda a base de dados?</p>
       <p style="margin: 10px 0; font-size: 14px; color: #666;">Esta ação não pode ser desfeita!</p>
