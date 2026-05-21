@@ -1,73 +1,106 @@
-import { Pool } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.STORAGE_URL);
+
+async function ensureTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS eventos (
+      id TEXT PRIMARY KEY,
+      filial TEXT,
+      nome TEXT,
+      tipo_pessoa TEXT,
+      tipo_evento TEXT,
+      placa TEXT,
+      oficina TEXT,
+      data_entrada DATE,
+      data_saida DATE,
+      mao_obra NUMERIC DEFAULT 0,
+      pecas NUMERIC DEFAULT 0,
+      cota NUMERIC DEFAULT 0,
+      numero_negado TEXT,
+      qtd_vidros INT DEFAULT 0,
+      valor_vidros NUMERIC DEFAULT 0,
+      qtd_acordos INT DEFAULT 0,
+      valor_acordos NUMERIC DEFAULT 0,
+      observacoes TEXT,
+      criado_em TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+}
 
 export default async function handler(req, res) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   try {
+    await ensureTable();
+
     if (req.method === 'GET') {
-      // Buscar todos os eventos
-      const { rows } = await pool.query('SELECT * FROM eventos ORDER BY dataEntrada DESC');
-      return res.status(200).json(rows);
+      const rows = await sql`SELECT * FROM eventos ORDER BY criado_em DESC`;
+      const eventos = rows.map(r => ({
+        id: r.id,
+        filial: r.filial,
+        nome: r.nome,
+        tipoPessoa: r.tipo_pessoa,
+        tipoEvento: r.tipo_evento,
+        placa: r.placa,
+        oficina: r.oficina,
+        dataEntrada: r.data_entrada ? r.data_entrada.toISOString().slice(0,10) : '',
+        dataSaida: r.data_saida ? r.data_saida.toISOString().slice(0,10) : '',
+        maoObra: Number(r.mao_obra),
+        pecas: Number(r.pecas),
+        cota: Number(r.cota),
+        numeroNegado: r.numero_negado,
+        qtdVidros: Number(r.qtd_vidros),
+        valorVidros: Number(r.valor_vidros),
+        qtdAcordos: Number(r.qtd_acordos),
+        valorAcordos: Number(r.valor_acordos),
+        observacoes: r.observacoes
+      }));
+      return res.status(200).json(eventos);
     }
-    
+
     if (req.method === 'POST') {
-      // Criar novo evento
-      const evento = req.body;
-      const { rows } = await pool.query(
-        `INSERT INTO eventos (
-          id, filial, placa, nome, tipoPessoa, tipoEvento, oficina,
-          dataEntrada, dataSaida, maoObra, pecas, cota, numeroNegado,
-          qtdVidros, valorVidros, qtdAcordos, valorAcordos, observacoes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-        RETURNING *`,
-        [
-          evento.id, evento.filial, evento.placa, evento.nome,
-          evento.tipoPessoa, evento.tipoEvento, evento.oficina,
-          evento.dataEntrada, evento.dataSaida, evento.maoObra,
-          evento.pecas, evento.cota, evento.numeroNegado,
-          evento.qtdVidros, evento.valorVidros, evento.qtdAcordos,
-          evento.valorAcordos, evento.observacoes
-        ]
-      );
-      return res.status(201).json(rows[0]);
+      const e = req.body;
+      await sql`
+        INSERT INTO eventos
+          (id, filial, nome, tipo_pessoa, tipo_evento, placa, oficina, data_entrada, data_saida,
+           mao_obra, pecas, cota, numero_negado, qtd_vidros, valor_vidros, qtd_acordos, valor_acordos, observacoes)
+        VALUES
+          (${e.id}, ${e.filial}, ${e.nome}, ${e.tipoPessoa}, ${e.tipoEvento}, ${e.placa}, ${e.oficina},
+           ${e.dataEntrada || null}, ${e.dataSaida || null},
+           ${e.maoObra}, ${e.pecas}, ${e.cota}, ${e.numeroNegado},
+           ${e.qtdVidros}, ${e.valorVidros}, ${e.qtdAcordos}, ${e.valorAcordos}, ${e.observacoes})
+      `;
+      return res.status(201).json({ ok: true });
     }
-    
+
     if (req.method === 'PUT') {
-      // Atualizar evento existente
-      const evento = req.body;
-      const { rows } = await pool.query(
-        `UPDATE eventos SET
-          filial = $2, placa = $3, nome = $4, tipoPessoa = $5,
-          tipoEvento = $6, oficina = $7, dataEntrada = $8, dataSaida = $9,
-          maoObra = $10, pecas = $11, cota = $12, numeroNegado = $13,
-          qtdVidros = $14, valorVidros = $15, qtdAcordos = $16,
-          valorAcordos = $17, observacoes = $18
-        WHERE id = $1
-        RETURNING *`,
-        [
-          evento.id, evento.filial, evento.placa, evento.nome,
-          evento.tipoPessoa, evento.tipoEvento, evento.oficina,
-          evento.dataEntrada, evento.dataSaida, evento.maoObra,
-          evento.pecas, evento.cota, evento.numeroNegado,
-          evento.qtdVidros, evento.valorVidros, evento.qtdAcordos,
-          evento.valorAcordos, evento.observacoes
-        ]
-      );
-      return res.status(200).json(rows[0]);
+      const e = req.body;
+      await sql`
+        UPDATE eventos SET
+          filial=${e.filial}, nome=${e.nome}, tipo_pessoa=${e.tipoPessoa}, tipo_evento=${e.tipoEvento},
+          placa=${e.placa}, oficina=${e.oficina}, data_entrada=${e.dataEntrada || null},
+          data_saida=${e.dataSaida || null}, mao_obra=${e.maoObra}, pecas=${e.pecas}, cota=${e.cota},
+          numero_negado=${e.numeroNegado}, qtd_vidros=${e.qtdVidros}, valor_vidros=${e.valorVidros},
+          qtd_acordos=${e.qtdAcordos}, valor_acordos=${e.valorAcordos}, observacoes=${e.observacoes}
+        WHERE id=${e.id}
+      `;
+      return res.status(200).json({ ok: true });
     }
-    
+
     if (req.method === 'DELETE') {
-      // Deletar evento
       const { id } = req.query;
-      await pool.query('DELETE FROM eventos WHERE id = $1', [id]);
-      return res.status(200).json({ message: 'Evento deletado com sucesso' });
+      await sql`DELETE FROM eventos WHERE id=${id}`;
+      return res.status(200).json({ ok: true });
     }
-    
+
     return res.status(405).json({ error: 'Método não permitido' });
-  } catch (error) {
-    console.error('Erro na API:', error);
-    return res.status(500).json({ error: error.message });
-  } finally {
-    await pool.end();
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
   }
 }
