@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Eventos Porto Mais</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem;
+      --radius-md: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem;
+      --color-bg: #f6f8fc; --color-surface: #ffffff; --color-border: #d7deea; --color-text: #132238; --color-text-muted: #5f6f86;
+      --color-primary: #0f4c97; --color-primary-2: #0b62d6; --color-danger: #c62828; --color-danger-2: #ef5350; --color-success: #2e7d32;
+      --shadow-md: 0 8px 24px rgba(15, 44, 86, 0.08); --font-body: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 30%, #f6f8fc 100%);
+      color: var(--color-text);
+      font-size: var(--text-base);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0;
+      padding: var(--space-4);
+    }
+
+    .header {
+      margin-bottom: var(--space-4);
+    }
+
+    .header-title {
+      margin-bottom: var(--space-3);
+    }
+
+    .header-title h1 {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .kpi-card {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(19,34,56,.1);
+      box-shadow: var(--shadow-md);
+      border-radius: var(--radius-xl);
+      padding: var(--space-3);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .kpi-card h3 {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    .kpi-card strong {
+      font-size: 1.3rem;
+      display: block;
+    }
+
+    .kpi-card span {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-card-total {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .kpi-card-total-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-3);
+    }
+    .kpi-card-total-header h3 { margin: 0; }
+    .kpi-card-total-header span {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+    .kpi-card-total-main {
+      display: flex;
+      gap: var(--space-3);
+    }
+    .kpi-split {
+      flex: 1;
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.7rem;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .kpi-split-blue {
+      background: linear-gradient(135deg, #0b62d6, #0f4c97);
+    }
+    .kpi-split-red {
+      background: linear-gradient(135deg, #ef5350, #c62828);
+    }
+    .kpi-split-label {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .kpi-split-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: flex-start;
+    }
+
+    .panel,
+    .chart-card,
+    .table-card {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(19,34,56,.1);
+      box-shadow: var(--shadow-md);
+      border-radius: var(--radius-xl);
+    }
+
+    .panel { padding: var(--space-5); position: sticky; top: 16px; }
+    .panel h2, .table-card h2 { font-size: var(--text-lg); margin-bottom: var(--space-4); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+    .field { display: flex; flex-direction: column; gap: var(--space-2); }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: var(--text-sm); font-weight: 600; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: .75rem .9rem;
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    textarea { min-height: 88px; resize: vertical; }
+
+    .actions, .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .actions { margin-top: var(--space-4); }
+    button, .file-label {
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      text-decoration: none;
+      font-size: var(--text-sm);
+    }
+    .btn-primary { background: var(--color-primary-2); color: white; }
+    .btn-secondary { background: #eaf2ff; color: var(--color-primary); }
+    .btn-danger { background: #fdecec; color: var(--color-danger); }
+    .btn-success { background: #e8f5e9; color: var(--color-success); }
+    .btn-warning { background: #fff4e5; color: #b36b00; }
+    .toolbar { margin-bottom: var(--space-4); }
+
+    .charts { display: grid; gap: var(--space-4); }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--space-4);
+    }
+    .chart-card, .table-card { padding: var(--space-4); }
+
+    .chart-card h2 {
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-card h2 span.hint {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .table-wrap { overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+    table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    th, td { padding: .7rem; border-bottom: 1px solid #e8edf5; text-align: left; font-size: .9rem; }
+    th { background: #f3f7fd; position: sticky; top: 0; z-index: 1; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .35rem .65rem;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+    .badge.associado { background: #e8f1ff; color: var(--color-primary); }
+    .badge.terceiro { background: #fdecec; color: var(--color-danger); }
+
+    .muted { color: var(--color-text-muted); }
+    .hidden { display: none; }
+    .footer-note { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .chart-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 15, 30, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .chart-overlay.active {
+      display: flex;
+    }
+    .chart-overlay-inner {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      width: min(1200px, 95vw);
+      height: min(650px, 90vh);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .chart-overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .chart-overlay-header h3 {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .chart-overlay-close {
+      border: 0;
+      background: transparent;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: var(--color-text-muted);
+      padding: .25rem .5rem;
+      border-radius: 999px;
+    }
+    .chart-overlay-close:hover {
+      background: #f2f4f8;
+      color: var(--color-text);
+    }
+    .chart-overlay-body { flex: 1; }
+    .chart-overlay-body canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+    @media (max-width: 900px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .container { padding: var(--space-3); }
+      .form-grid, .filters { grid-template-columns: 1fr; }
+      table { min-width: 960px; }
+      .kpi-card-total-main { flex-direction: column; }
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      body { background: #ffffff; }
+      .panel, .toolbar, .filters, .chart-card, .kpi-grid, .header-title, .chart-overlay { display: none !important; }
+      .container { max-width: 100%; padding: 0; }
+      .table-card { box-shadow: none; border: 0; border-radius: 0; }
+      table { min-width: 100%; font-size: 11px; }
+      th, td { padding: 4px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="header">
+      <div class="header-title">
+        <h1>Painel Mensal de Eventos</h1>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-total">
+            <div class="kpi-card-total-header">
+              <h3>Total de eventos</h3>
+              <span id="kpiEventosTotalLabel">Total: 0</span>
+            </div>
+            <div class="kpi-card-total-main">
+              <div class="kpi-split kpi-split-blue">
+                <div class="kpi-split-label">Finalizados</div>
+                <div class="kpi-split-value" id="kpiEventosFinalizados">0</div>
+              </div>
+              <div class="kpi-split kpi-split-red">
+                <div class="kpi-split-label">Em aberto</div>
+                <div class="kpi-split-value" id="kpiEventosAbertos">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <h3>Custo total líquido</h3>
+          <strong id="kpiTotal">R$ 0,00</strong>
+          <span>(Custos − cota participação)</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Negados</h3>
+          <strong id="kpiNegados">0</strong>
+          <span>Eventos com tipo Negado</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Vidros (qtde)</h3>
+          <strong id="kpiQtdVidros">0</strong>
+          <span>Total de danos a vidros</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Mão de obra</h3>
+          <strong id="kpiMaoObra">R$ 0,00</strong>
+          <span>Total gasto com mão de obra</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Peças</h3>
+          <strong id="kpiPecas">R$ 0,00</strong>
+          <span>Total gasto com peças</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Vidros (valor)</h3>
+          <strong id="kpiVidrosValor">R$ 0,00</strong>
+          <span>Total gasto com vidros</span>
+        </div>
+        <div class="kpi-card">
+          <h3>Cota participação</h3>
+          <strong id="kpiCota">R$ 0,00</strong>
+          <span>Total recebido de cota</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <h2 id="formTitulo">Lançar evento</h2>
+        <form id="eventoForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="filial">Filial</label>
+              <input id="filial" required placeholder="Ex.: Matriz, Filial 1" />
+            </div>
+            <div class="field">
+              <label for="placa">Placa</label>
+              <input id="placa" required />
+            </div>
+            <div class="field full">
+              <label for="nome">Nome</label>
+              <input id="nome" required />
+            </div>
+            <div class="field">
+              <label for="tipoPessoa">Tipo (pessoa)</label>
+              <select id="tipoPessoa">
+                <option>Associado</option>
+                <option>Terceiro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tipoEvento">Tipo de evento</label>
+              <select id="tipoEvento">
+                <option>Regular</option>
+                <option>Negado</option>
+                <option>Vidro</option>
+                <option>Acordo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="oficina">Oficina</label>
+              <input id="oficina" required />
+            </div>
+            <div class="field">
+              <label for="dataEntrada">Data de entrada</label>
+              <input id="dataEntrada" type="date" required />
+            </div>
+            <div class="field">
+              <label for="dataSaida">Data de saída</label>
+              <input id="dataSaida" type="date" />
+            </div>
+            <div class="field">
+              <label for="maoObra">Valor mão de obra</label>
+              <input id="maoObra" type="number" step="0.01" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="pecas">Valor peças</label>
+              <input id="pecas" type="number" step="0.01" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="cota">Cota paga pelo associado</label>
+              <input id="cota" type="number" step="0.01" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="numeroNegado">Número de negado</label>
+              <input id="numeroNegado" placeholder="Se houver" />
+            </div>
+            <div class="field">
+              <label for="qtdVidros">Número de danos a vidros</label>
+              <input id="qtdVidros" type="number" min="0" step="1" value="0" />
+            </div>
+            <div class="field">
+              <label for="valorVidros">Valor gasto com vidros</label>
+              <input id="valorVidros" type="number" step="0.01" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="qtdAcordos">Número de acordos</label>
+              <input id="qtdAcordos" type="number" min="0" step="1" value="0" />
+            </div>
+            <div class="field">
+              <label for="valorAcordos">Valor de acordos</label>
+              <input id="valorAcordos" type="number" step="0.01" min="0" value="0" />
+            </div>
+            <div class="field full">
+              <label for="observacoes">Observações</label>
+              <textarea id="observacoes"></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn-primary" id="btnSalvar">Salvar evento</button>
+            <button type="button" id="btnCancelarEdicao" class="btn-warning hidden">Cancelar edição</button>
+            <button type="button" id="limparForm" class="btn-secondary">Limpar</button>
+          </div>
+        </form>
+        <p class="footer-note">
+          Os dados ficam salvos no navegador atual e também podem ser exportados em JSON para abrir em outro computador.
+        </p>
+      </aside>
+
+      <main class="charts">
+        <div class="table-card">
+          <h2>Controles e filtros</h2>
+          <div class="toolbar">
+            <button class="btn-secondary" id="exportarJson">Exportar JSON</button>
+            <label class="file-label btn-success" for="importarJson">Importar JSON</label>
+            <input id="importarJson" type="file" accept="application/json" class="hidden" />
+            <button class="btn-danger" id="limparTudo">Apagar base</button>
+          </div>
+          <div class="filters">
+            <div class="field">
+              <label for="filtroFilial">Filial</label>
+              <select id="filtroFilial">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filtroPessoa">Tipo (pessoa)</label>
+              <select id="filtroPessoa">
+                <option value="">Todos</option>
+                <option>Associado</option>
+                <option>Terceiro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filtroTipoEvento">Tipo de evento</label>
+              <select id="filtroTipoEvento">
+                <option value="">Todos</option>
+                <option>Regular</option>
+                <option>Negado</option>
+                <option>Vidro</option>
+                <option>Acordo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filtroMes">Mês referência</label>
+              <input id="filtroMes" type="month" />
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card" data-chart-id="mes">
+            <h2>
+              Eventos por mês
+              <span class="hint">Clique no gráfico para tela cheia</span>
+            </h2>
+            <canvas id="chartMes"></canvas>
+          </div>
+          <div class="chart-card" data-chart-id="pessoa">
+            <h2>
+              Associado x Terceiro
+              <span class="hint">Clique no gráfico para tela cheia</span>
+            </h2>
+            <canvas id="chartPessoa"></canvas>
+          </div>
+          <div class="chart-card" data-chart-id="tipoEvento">
+            <h2>
+              Eventos por tipo
+              <span class="hint">Clique no gráfico para tela cheia</span>
+            </h2>
+            <canvas id="chartTipoEvento"></canvas>
+          </div>
+          <div class="chart-card" data-chart-id="custos">
+            <h2>
+              Custos por categoria
+              <span class="hint">Clique no gráfico para tela cheia</span>
+            </h2>
+            <canvas id="chartCustos"></canvas>
+          </div>
+          <div class="chart-card" data-chart-id="filial">
+            <h2>
+              Eventos por filial
+              <span class="hint">Clique no gráfico para tela cheia</span>
+            </h2>
+            <canvas id="chartFilial"></canvas>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <h2>Base de eventos (respeita filtros)</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Filial</th>
+                  <th>Nome</th>
+                  <th>Tipo (pessoa)</th>
+                  <th>Tipo de evento</th>
+                  <th>Placa</th>
+                  <th>Oficina</th>
+                  <th>Entrada</th>
+                  <th>Saída</th>
+                  <th>Mão de obra</th>
+                  <th>Peças</th>
+                  <th>Cota</th>
+                  <th>Negado</th>
+                  <th>Qtd. vidros</th>
+                  <th>Valor vidros</th>
+                  <th>Qtd. acordos</th>
+                  <th>Valor acordos</th>
+                  <th>Total líquido</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaEventos"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <div class="chart-overlay" id="chartOverlay">
+    <div class="chart-overlay-inner">
+      <div class="chart-overlay-header">
+        <h3 id="chartOverlayTitle">Gráfico</h3>
+        <button type="button" class="chart-overlay-close" id="chartOverlayClose" title="Fechar">
+          ✕
+        </button>
+      </div>
+      <div class="chart-overlay-body">
+        <canvas id="chartOverlayCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'portoMaisEventosV4';
+    const FORM_DRAFT_KEY = 'portoMaisFormDraftV4';
+
+    const form = document.getElementById('eventoForm');
+    const tabela = document.getElementById('tabelaEventos');
+    const filtroFilial = document.getElementById('filtroFilial');
+    const filtroPessoa = document.getElementById('filtroPessoa');
+    const filtroTipoEvento = document.getElementById('filtroTipoEvento');
+    const filtroMes = document.getElementById('filtroMes');
+
+    const formTitulo = document.getElementById('formTitulo');
+    const btnSalvar = document.getElementById('btnSalvar');
+    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
+
+    let eventos = [];
+    let chartMes, chartPessoa, chartTipoEvento, chartCustos, chartFilial;
+    let editingId = null;
+
+    const overlay = document.getElementById('chartOverlay');
+    const overlayCanvas = document.getElementById('chartOverlayCanvas');
+    const overlayTitle = document.getElementById('chartOverlayTitle');
+    const overlayClose = document.getElementById('chartOverlayClose');
+    let overlayChart = null;
+
+    const currency = value =>
+      Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const num = value => Number(value || 0);
+    const formatDate = date => (date ? new Date(date + 'T00:00:00').toLocaleDateString('pt-BR') : '');
+    const monthKey = date => (date ? date.slice(0, 7) : 'Sem data');
+
+    function loadData() {
+      try {
+        eventos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        eventos = [];
+      }
+    }
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(eventos));
+    }
+
+    function getFormData(idExistente = null) {
+      return {
+        id: idExistente || ('EV-' + Date.now()),
+        filial: document.getElementById('filial').value.trim(),
+        nome: document.getElementById('nome').value.trim(),
+        tipoPessoa: document.getElementById('tipoPessoa').value,
+        tipoEvento: document.getElementById('tipoEvento').value,
+        placa: document.getElementById('placa').value.trim().toUpperCase(),
+        oficina: document.getElementById('oficina').value.trim(),
+        dataEntrada: document.getElementById('dataEntrada').value,
+        dataSaida: document.getElementById('dataSaida').value,
+        maoObra: num(document.getElementById('maoObra').value),
+        pecas: num(document.getElementById('pecas').value),
+        cota: num(document.getElementById('cota').value),
+        numeroNegado: document.getElementById('numeroNegado').value.trim(),
+        qtdVidros: num(document.getElementById('qtdVidros').value),
+        valorVidros: num(document.getElementById('valorVidros').value),
+        qtdAcordos: num(document.getElementById('qtdAcordos').value),
+        valorAcordos: num(document.getElementById('valorAcordos').value),
+        observacoes: document.getElementById('observacoes').value.trim()
+      };
+    }
+
+    function fillFormFromEvent(ev) {
+      document.getElementById('filial').value = ev.filial || '';
+      document.getElementById('placa').value = ev.placa || '';
+      document.getElementById('nome').value = ev.nome || '';
+      document.getElementById('tipoPessoa').value = ev.tipoPessoa || 'Associado';
+      document.getElementById('tipoEvento').value = ev.tipoEvento || 'Regular';
+      document.getElementById('oficina').value = ev.oficina || '';
+      document.getElementById('dataEntrada').value = ev.dataEntrada || '';
+      document.getElementById('dataSaida').value = ev.dataSaida || '';
+      document.getElementById('maoObra').value = ev.maoObra ?? 0;
+      document.getElementById('pecas').value = ev.pecas ?? 0;
+      document.getElementById('cota').value = ev.cota ?? 0;
+      document.getElementById('numeroNegado').value = ev.numeroNegado || '';
+      document.getElementById('qtdVidros').value = ev.qtdVidros ?? 0;
+      document.getElementById('valorVidros').value = ev.valorVidros ?? 0;
+      document.getElementById('qtdAcordos').value = ev.qtdAcordos ?? 0;
+      document.getElementById('valorAcordos').value = ev.valorAcordos ?? 0;
+      document.getElementById('observacoes').value = ev.observacoes || '';
+    }
+
+    function clearForm() {
+      form.reset();
+      ['maoObra','pecas','cota','qtdVidros','valorVidros','qtdAcordos','valorAcordos'].forEach(id => {
+        document.getElementById(id).value = 0;
+      });
+      editingId = null;
+      formTitulo.textContent = 'Lançar evento';
+      btnSalvar.textContent = 'Salvar evento';
+      btnCancelarEdicao.classList.add('hidden');
+    }
+
+    function saveFormDraft() {
+      const draft = {
+        filial: document.getElementById('filial').value,
+        placa: document.getElementById('placa').value,
+        nome: document.getElementById('nome').value,
+        tipoPessoa: document.getElementById('tipoPessoa').value,
+        tipoEvento: document.getElementById('tipoEvento').value,
+        oficina: document.getElementById('oficina').value,
+        dataEntrada: document.getElementById('dataEntrada').value,
+        dataSaida: document.getElementById('dataSaida').value,
+        maoObra: document.getElementById('maoObra').value,
+        pecas: document.getElementById('pecas').value,
+        cota: document.getElementById('cota').value,
+        numeroNegado: document.getElementById('numeroNegado').value,
+        qtdVidros: document.getElementById('qtdVidros').value,
+        valorVidros: document.getElementById('valorVidros').value,
+        qtdAcordos: document.getElementById('qtdAcordos').value,
+        valorAcordos: document.getElementById('valorAcordos').value,
+        observacoes: document.getElementById('observacoes').value
+      };
+      localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    function loadFormDraft() {
+      try {
+        const raw = localStorage.getItem(FORM_DRAFT_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        Object.entries(draft).forEach(([key, value]) => {
+          const el = document.getElementById(key);
+          if (el != null) el.value = value;
+        });
+      } catch (e) {
+        console.warn('Falha ao carregar rascunho do formulário', e);
+      }
+    }
+
+    function getFilteredEvents() {
+      return eventos.filter(item => {
+        const okFilial = !filtroFilial.value || item.filial === filtroFilial.value;
+        const okPessoa = !filtroPessoa.value || item.tipoPessoa === filtroPessoa.value;
+        const okTipoEvento = !filtroTipoEvento.value || item.tipoEvento === filtroTipoEvento.value;
+        const okMes = !filtroMes.value || monthKey(item.dataEntrada) === filtroMes.value;
+        return okFilial && okPessoa && okTipoEvento && okMes;
+      });
+    }
+
+    function updateFilialFilter() {
+      const current = filtroFilial.value;
+      const filiais = [...new Set(eventos.map(e => e.filial).filter(Boolean))].sort((a,b) =>
+        a.localeCompare(b)
+      );
+      filtroFilial.innerHTML =
+        '<option value="">Todas</option>' +
+        filiais.map(f => `<option value="${f}">${f}</option>`).join('');
+      filtroFilial.value = filiais.includes(current) ? current : '';
+    }
+
+    function renderTable() {
+      const data = getFilteredEvents();
+      tabela.innerHTML = data.map(item => {
+        const bruto = item.maoObra + item.pecas + item.valorVidros + item.valorAcordos;
+        const liquido = bruto - item.cota;
+        return `
+          <tr>
+            <td>${item.filial}</td>
+            <td>${item.nome}</td>
+            <td><span class="badge ${item.tipoPessoa === 'Associado' ? 'associado' : 'terceiro'}">${item.tipoPessoa}</span></td>
+            <td>${item.tipoEvento}</td>
+            <td>${item.placa}</td>
+            <td>${item.oficina}</td>
+            <td>${formatDate(item.dataEntrada)}</td>
+            <td>${formatDate(item.dataSaida)}</td>
+            <td>${currency(item.maoObra)}</td>
+            <td>${currency(item.pecas)}</td>
+            <td>${currency(item.cota)}</td>
+            <td>${item.numeroNegado || '-'}</td>
+            <td>${item.qtdVidros}</td>
+            <td>${currency(item.valorVidros)}</td>
+            <td>${item.qtdAcordos}</td>
+            <td>${currency(item.valorAcordos)}</td>
+            <td>${currency(liquido)}</td>
+            <td>
+              <button class="btn-warning" onclick="editEvent('${item.id}')">Editar</button>
+              <button class="btn-danger" onclick="removeEvent('${item.id}')">Excluir</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function updateKPIs() {
+      const data = getFilteredEvents();
+
+      const totalMaoObra = data.reduce((s, e) => s + e.maoObra, 0);
+      const totalPecas   = data.reduce((s, e) => s + e.pecas, 0);
+      const totalVidros  = data.reduce((s, e) => s + e.valorVidros, 0);
+      const totalAcordos = data.reduce((s, e) => s + e.valorAcordos, 0);
+      const totalCota    = data.reduce((s, e) => s + e.cota, 0);
+      const totalEventos = data.length;
+      const custoBruto   = totalMaoObra + totalPecas + totalVidros + totalAcordos;
+      const custoLiquido = custoBruto - totalCota;
+      const negados      = data.filter(e => e.tipoEvento === 'Negado').length;
+      const qtdVidros    = data.reduce((s, e) => s + (e.qtdVidros || 0), 0);
+      const finalizados  = data.filter(e => e.dataSaida).length;
+      const emAberto     = totalEventos - finalizados;
+
+      const totalLabel = document.getElementById('kpiEventosTotalLabel');
+      const finEl      = document.getElementById('kpiEventosFinalizados');
+      const abEl       = document.getElementById('kpiEventosAbertos');
+
+      if (totalLabel && finEl && abEl) {
+        totalLabel.textContent = `Total: ${totalEventos}`;
+        finEl.textContent = finalizados;
+        abEl.textContent = emAberto;
+      }
+
+      if (document.getElementById('kpiTotal')) {
+        document.getElementById('kpiTotal').textContent       = currency(custoLiquido);
+        document.getElementById('kpiNegados').textContent     = negados;
+        document.getElementById('kpiQtdVidros').textContent   = qtdVidros;
+        document.getElementById('kpiMaoObra').textContent     = currency(totalMaoObra);
+        document.getElementById('kpiPecas').textContent       = currency(totalPecas);
+        document.getElementById('kpiVidrosValor').textContent = currency(totalVidros);
+        document.getElementById('kpiCota').textContent        = currency(totalCota);
+      }
+    }
+
+    function makeOrUpdateChart(instance, canvasId, config) {
+      if (instance) instance.destroy();
+      return new Chart(document.getElementById(canvasId), config);
+    }
+
+    function buildChartsConfigs() {
+      const data = getFilteredEvents();
+
+      const byMonth = {};
+      const byPessoa = { Associado: 0, Terceiro: 0 };
+      const byTipoEvento = { Regular: 0, Negado: 0, Vidro: 0, Acordo: 0 };
+      const byFilial = {};
+      const totals = { 'Mão de obra': 0, 'Peças': 0, 'Vidros': 0, 'Acordos': 0 };
+
+      data.forEach(e => {
+        const month = monthKey(e.dataEntrada);
+        byMonth[month] = (byMonth[month] || 0) + 1;
+        byPessoa[e.tipoPessoa] = (byPessoa[e.tipoPessoa] || 0) + 1;
+        byTipoEvento[e.tipoEvento] = (byTipoEvento[e.tipoEvento] || 0) + 1;
+        byFilial[e.filial] = (byFilial[e.filial] || 0) + 1;
+        totals['Mão de obra'] += e.maoObra;
+        totals['Peças'] += e.pecas;
+        totals['Vidros'] += e.valorVidros;
+        totals['Acordos'] += e.valorAcordos;
+      });
+
+      const monthLabels = Object.keys(byMonth).sort();
+      const filialLabels = Object.keys(byFilial).sort();
+
+      return {
+        mes: {
+          type: 'bar',
+          data: {
+            labels: monthLabels,
+            datasets: [{
+              label: 'Eventos',
+              data: monthLabels.map(m => byMonth[m]),
+              backgroundColor: '#0b62d6',
+              borderRadius: 10
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        },
+        pessoa: {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(byPessoa),
+            datasets: [{
+              data: Object.values(byPessoa),
+              backgroundColor: ['#0f4c97', '#c62828']
+            }]
+          },
+          options: { responsive: true }
+        },
+        tipoEvento: {
+          type: 'bar',
+          data: {
+            labels: Object.keys(byTipoEvento),
+            datasets: [{
+              label: 'Eventos',
+              data: Object.values(byTipoEvento),
+              backgroundColor: ['#0f4c97','#c62828','#ef5350','#4f8fe8'],
+              borderRadius: 10
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        },
+        custos: {
+          type: 'bar',
+          data: {
+            labels: Object.keys(totals),
+            datasets: [{
+              label: 'Valor',
+              data: Object.values(totals),
+              backgroundColor: ['#0f4c97','#4f8fe8','#c62828','#ef5350'],
+              borderRadius: 10
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        },
+        filial: {
+          type: 'bar',
+          data: {
+            labels: filialLabels,
+            datasets: [{
+              label: 'Eventos',
+              data: filialLabels.map(f => byFilial[f]),
+              backgroundColor: '#c62828',
+              borderRadius: 10
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } }
+          }
+        }
+      };
+    }
+
+    function updateCharts() {
+      const configs = buildChartsConfigs();
+
+      chartMes = makeOrUpdateChart(chartMes, 'chartMes', configs.mes);
+      chartPessoa = makeOrUpdateChart(chartPessoa, 'chartPessoa', configs.pessoa);
+      chartTipoEvento = makeOrUpdateChart(chartTipoEvento, 'chartTipoEvento', configs.tipoEvento);
+      chartCustos = makeOrUpdateChart(chartCustos, 'chartCustos', configs.custos);
+      chartFilial = makeOrUpdateChart(chartFilial, 'chartFilial', configs.filial);
+    }
+
+    function openChartFullscreen(chartId, titleText) {
+      const configs = buildChartsConfigs();
+      const config = configs[chartId];
+      if (!config) return;
+
+      if (overlayChart) {
+        overlayChart.destroy();
+        overlayChart = null;
+      }
+
+      overlayTitle.textContent = titleText;
+      overlay.classList.add('active');
+
+      overlayChart = new Chart(overlayCanvas, config);
+    }
+
+    function closeChartFullscreen() {
+      overlay.classList.remove('active');
+      if (overlayChart) {
+        overlayChart.destroy();
+        overlayChart = null;
+      }
+    }
+
+    overlayClose.addEventListener('click', closeChartFullscreen);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeChartFullscreen();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeChartFullscreen();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const chartCards = document.querySelectorAll('.chart-card');
+      chartCards.forEach(card => {
+        const chartId = card.getAttribute('data-chart-id');
+        const titleEl = card.querySelector('h2');
+        const titleText = titleEl ? titleEl.childNodes[0].textContent.trim() : 'Gráfico';
+
+        const canvas = card.querySelector('canvas');
+        if (canvas && chartId) {
+          canvas.style.cursor = 'zoom-in';
+          canvas.addEventListener('click', () => openChartFullscreen(chartId, titleText));
+        }
+      });
+    });
+
+    function refreshAll() {
+      updateFilialFilter();
+      renderTable();
+      updateKPIs();
+      updateCharts();
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (editingId) {
+        const index = eventos.findIndex(ev => ev.id === editingId);
+        if (index !== -1) {
+          eventos[index] = getFormData(editingId);
+        }
+      } else {
+        eventos.unshift(getFormData());
+      }
+      saveData();
+      refreshAll();
+      clearForm();
+      localStorage.removeItem(FORM_DRAFT_KEY);
+    });
+
+    document.getElementById('limparForm').addEventListener('click', () => {
+      clearForm();
+      localStorage.removeItem(FORM_DRAFT_KEY);
+    });
+
+    btnCancelarEdicao.addEventListener('click', () => {
+      clearForm();
+      loadFormDraft();
+    });
+
+    document.getElementById('limparTudo').addEventListener('click', () => {
+      if (confirm('Tem certeza que deseja apagar toda a base?')) {
+        eventos = [];
+        saveData();
+        refreshAll();
+      }
+    });
+
+    document.getElementById('exportarJson').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `porto-mais-eventos-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('importarJson').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        if (!Array.isArray(imported)) throw new Error();
+        eventos = imported;
+        saveData();
+        refreshAll();
+        alert('Base importada com sucesso.');
+      } catch {
+        alert('Arquivo JSON inválido.');
+      }
+      e.target.value = '';
+    });
+
+    [filtroFilial, filtroPessoa, filtroTipoEvento, filtroMes].forEach(el =>
+      el.addEventListener('input', refreshAll)
+    );
+
+    form.querySelectorAll('input, select, textarea').forEach(el => {
+      el.addEventListener('input', saveFormDraft);
+      el.addEventListener('change', saveFormDraft);
+    });
+
+    window.removeEvent = function(id) {
+      if (!confirm('Excluir este evento?')) return;
+      eventos = eventos.filter(item => item.id !== id);
+      saveData();
+      refreshAll();
+    }
+
+    window.editEvent = function(id) {
+      const ev = eventos.find(e => e.id === id);
+      if (!ev) return;
+      editingId = id;
+      fillFormFromEvent(ev);
+      formTitulo.textContent = 'Editar evento';
+      btnSalvar.textContent = 'Salvar alterações';
+      btnCancelarEdicao.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    loadData();
+    loadFormDraft();
+    refreshAll();
+  </script>
+</body>
+</html>
