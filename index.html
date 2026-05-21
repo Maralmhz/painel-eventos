@@ -1104,5 +1104,60 @@
       </div>
     </div>
   </div>
+
+  <script>
+// Botão exportar JSON
+document.getElementById('exportarJson').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `porto-mais-eventos-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Botão importar JSON
+document.getElementById('importarJson').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) {
+        eventos = data;
+        saveData();
+        refreshAll();
+        alert('Dados importados com sucesso!');
+      } else {
+        alert('Formato inválido de arquivo');
+      }
+    } catch (err) {
+      alert('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Botão apagar base (abre modal)
+document.getElementById('limparTudo').addEventListener('click', () => {
+  const modal = document.getElementById('modalApagarBase');
+  modal.style.display = 'flex';
+});
+
+// Botão cancelar do modal
+document.getElementById('btnCancelarApagar').addEventListener('click', () => {
+  document.getElementById('modalApagarBase').style.display = 'none';
+});
+
+// Botão confirmar do modal
+document.getElementById('btnConfirmarApagar').addEventListener('click', () => {
+  document.getElementById('modalApagarBase').style.display = 'none';
+  eventos = [];
+  saveData();
+  refreshAll();
+});
+</script>
 </body>
 </html>
