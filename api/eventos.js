@@ -9,34 +9,25 @@ const dbUrl =
 const sql = neon(dbUrl);
 
 async function ensureTable() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS eventos (
-      id TEXT PRIMARY KEY
-    )
-  `;
-  const cols = [
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS filial TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS nome TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS tipo_pessoa TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS tipo_evento TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS placa TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS oficina TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS data_entrada DATE',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS data_saida DATE',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS mao_obra NUMERIC DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS pecas NUMERIC DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS cota NUMERIC DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS numero_negado TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS qtd_vidros INT DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS valor_vidros NUMERIC DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS qtd_acordos INT DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS valor_acordos NUMERIC DEFAULT 0',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS observacoes TEXT',
-    'ALTER TABLE eventos ADD COLUMN IF NOT EXISTS criado_em TIMESTAMPTZ DEFAULT NOW()'
-  ];
-  for (const col of cols) {
-    await sql.unsafe(col);
-  }
+  await sql`CREATE TABLE IF NOT EXISTS eventos (id TEXT PRIMARY KEY)`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS filial TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS nome TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS tipo_pessoa TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS tipo_evento TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS placa TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS oficina TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS data_entrada DATE`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS data_saida DATE`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS mao_obra NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS pecas NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS cota NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS numero_negado TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS qtd_vidros INT DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS valor_vidros NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS qtd_acordos INT DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS valor_acordos NUMERIC DEFAULT 0`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS observacoes TEXT`;
+  await sql`ALTER TABLE eventos ADD COLUMN IF NOT EXISTS criado_em TIMESTAMPTZ DEFAULT NOW()`;
 }
 
 module.exports = async function handler(req, res) {
@@ -82,12 +73,12 @@ module.exports = async function handler(req, res) {
            data_entrada, data_saida, mao_obra, pecas, cota, numero_negado,
            qtd_vidros, valor_vidros, qtd_acordos, valor_acordos, observacoes)
         VALUES
-          (${e.id}, ${e.filial || ''}, ${e.nome || ''}, ${e.tipoPessoa || ''},
-           ${e.tipoEvento || ''}, ${e.placa || ''}, ${e.oficina || ''},
-           ${e.dataEntrada || null}, ${e.dataSaida || null},
-           ${e.maoObra || 0}, ${e.pecas || 0}, ${e.cota || 0},
-           ${e.numeroNegado || ''}, ${e.qtdVidros || 0}, ${e.valorVidros || 0},
-           ${e.qtdAcordos || 0}, ${e.valorAcordos || 0}, ${e.observacoes || ''})
+          (${e.id}, ${e.filial||''}, ${e.nome||''}, ${e.tipoPessoa||''},
+           ${e.tipoEvento||''}, ${e.placa||''}, ${e.oficina||''},
+           ${e.dataEntrada||null}, ${e.dataSaida||null},
+           ${e.maoObra||0}, ${e.pecas||0}, ${e.cota||0},
+           ${e.numeroNegado||''}, ${e.qtdVidros||0}, ${e.valorVidros||0},
+           ${e.qtdAcordos||0}, ${e.valorAcordos||0}, ${e.observacoes||""})
         ON CONFLICT (id) DO NOTHING
       `;
       return res.status(201).json({ ok: true });
@@ -97,14 +88,14 @@ module.exports = async function handler(req, res) {
       const e = req.body;
       await sql`
         UPDATE eventos SET
-          filial=${e.filial || ''}, nome=${e.nome || ''},
-          tipo_pessoa=${e.tipoPessoa || ''}, tipo_evento=${e.tipoEvento || ''},
-          placa=${e.placa || ''}, oficina=${e.oficina || ''},
-          data_entrada=${e.dataEntrada || null}, data_saida=${e.dataSaida || null},
-          mao_obra=${e.maoObra || 0}, pecas=${e.pecas || 0}, cota=${e.cota || 0},
-          numero_negado=${e.numeroNegado || ''}, qtd_vidros=${e.qtdVidros || 0},
-          valor_vidros=${e.valorVidros || 0}, qtd_acordos=${e.qtdAcordos || 0},
-          valor_acordos=${e.valorAcordos || 0}, observacoes=${e.observacoes || ''}
+          filial=${e.filial||''}, nome=${e.nome||''},
+          tipo_pessoa=${e.tipoPessoa||''}, tipo_evento=${e.tipoEvento||''},
+          placa=${e.placa||''}, oficina=${e.oficina||''},
+          data_entrada=${e.dataEntrada||null}, data_saida=${e.dataSaida||null},
+          mao_obra=${e.maoObra||0}, pecas=${e.pecas||0}, cota=${e.cota||0},
+          numero_negado=${e.numeroNegado||''}, qtd_vidros=${e.qtdVidros||0},
+          valor_vidros=${e.valorVidros||0}, qtd_acordos=${e.qtdAcordos||0},
+          valor_acordos=${e.valorAcordos||0}, observacoes=${e.observacoes||''}
         WHERE id=${e.id}
       `;
       return res.status(200).json({ ok: true });
