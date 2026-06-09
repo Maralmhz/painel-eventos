@@ -225,7 +225,7 @@
             </div>
             <div class="field">
               <label for="tipoEvento">Tipo de evento</label>
-              <select id="tipoEvento"><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option></select>
+              <select id="tipoEvento"><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
             </div>
             <div class="field"><label for="oficina">Oficina</label><input id="oficina" required /></div>
             <div class="field"><label for="dataEntrada">Data de entrada</label><input id="dataEntrada" type="date" required /></div>
@@ -266,7 +266,7 @@
             </div>
             <div class="field">
               <label for="filtroTipoEvento">Tipo de evento</label>
-              <select id="filtroTipoEvento"><option value="">Todos</option><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option></select>
+              <select id="filtroTipoEvento"><option value="">Todos</option><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
             </div>
             <div class="field"><label for="filtroMes">Mês referência</label><input id="filtroMes" type="month" /></div>
           </div>
@@ -495,12 +495,16 @@
 
     function buildChartsConfigs() {
       const data = getFilteredEvents();
-      const byMonth={}, byPessoa={Associado:0,Terceiro:0}, byTipo={Regular:0,Negado:0,Vidro:0,Acordo:0}, byFilial={};
+      const byMonth={}, byPessoa={Associado:0,Terceiro:0}, byTipo={Regular:0,Negado:0,Vidro:0,Acordo:0,Furto:0}, byFilial={};
       const totals={'Mão de obra':0,'Peças':0,'Vidros':0,'Acordos':0};
       data.forEach(e=>{
         const m=monthKey(e.dataEntrada); byMonth[m]=(byMonth[m]||0)+1;
         byPessoa[e.tipoPessoa]=(byPessoa[e.tipoPessoa]||0)+1;
-        byTipo[e.tipoEvento]=(byTipo[e.tipoEvento]||0)+1;
+        if (byTipo[e.tipoEvento] !== undefined) {
+          byTipo[e.tipoEvento]++;
+        } else {
+          byTipo[e.tipoEvento] = 1;
+        }
         byFilial[e.filial]=(byFilial[e.filial]||0)+1;
         totals['Mão de obra']+=e.maoObra; totals['Peças']+=e.pecas;
         totals['Vidros']+=e.valorVidros; totals['Acordos']+=e.valorAcordos;
@@ -509,7 +513,7 @@
       return {
         mes:      { type:'bar', data:{ labels:mL, datasets:[{label:'Eventos',data:mL.map(m=>byMonth[m]),backgroundColor:'#0b62d6',borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
         pessoa:   { type:'doughnut', data:{ labels:Object.keys(byPessoa), datasets:[{data:Object.values(byPessoa),backgroundColor:['#0f4c97','#c62828']}]}, options:{responsive:true} },
-        tipoEvento:{ type:'bar', data:{ labels:Object.keys(byTipo), datasets:[{label:'Eventos',data:Object.values(byTipo),backgroundColor:['#0f4c97','#c62828','#ef5350','#4f8fe8'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
+        tipoEvento:{ type:'bar', data:{ labels:Object.keys(byTipo), datasets:[{label:'Eventos',data:Object.values(byTipo),backgroundColor:['#0f4c97','#c62828','#ef5350','#4f8fe8','#7b2d8b'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
         custos:   { type:'bar', data:{ labels:Object.keys(totals), datasets:[{label:'Valor',data:Object.values(totals),backgroundColor:['#0f4c97','#4f8fe8','#c62828','#ef5350'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
         filial:   { type:'bar', data:{ labels:fL, datasets:[{label:'Eventos',data:fL.map(f=>byFilial[f]),backgroundColor:'#c62828',borderRadius:10}]}, options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}} }
       };
