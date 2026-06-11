@@ -30,8 +30,29 @@
     }
     .container { max-width: 100%; margin: 0; padding: var(--space-4); }
     .header { margin-bottom: var(--space-4); }
-    .header-title { margin-bottom: var(--space-3); }
+    .header-title { margin-bottom: var(--space-3); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
     .header-title h1 { font-size: var(--text-lg); font-weight: 700; color: var(--color-text); }
+
+    /* Modo Visualização banner */
+    .view-mode-banner {
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: var(--radius-lg);
+      padding: 0.5rem 1rem;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: #795500;
+      margin-bottom: var(--space-3);
+    }
+    .view-mode-banner.active { display: flex; }
+
+    /* Botão modo visualização */
+    .btn-view-mode { background: #eaf2ff; color: var(--color-primary); }
+    .btn-view-mode.active { background: #fff3cd; color: #795500; border: 1.5px solid #ffe082; }
+
     .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
     .kpi-card {
       background: rgba(255,255,255,.94); border: 1px solid rgba(19,34,56,.1);
@@ -52,6 +73,7 @@
     .kpi-split-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.03em; }
     .kpi-split-value { font-size: 1.1rem; font-weight: 700; line-height: 1.1; }
     .layout { display: grid; grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: var(--space-4); align-items: flex-start; }
+    .layout.view-mode { grid-template-columns: minmax(0, 1fr); }
     .panel, .chart-card, .table-card {
       background: rgba(255,255,255,.94); border: 1px solid rgba(19,34,56,.1);
       box-shadow: var(--shadow-md); border-radius: var(--radius-xl);
@@ -96,6 +118,20 @@
     .hidden { display: none; }
     .footer-note { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
     .filters { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-3); }
+
+    /* Filtros rápidos */
+    .quick-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+    .btn-quick-filter {
+      border: 1.5px solid var(--color-border); border-radius: 999px;
+      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      background: var(--color-surface); color: var(--color-text-muted);
+      transition: all 0.18s;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn-quick-filter:hover { border-color: var(--color-primary-2); color: var(--color-primary); background: #eaf2ff; }
+    .btn-quick-filter.active-filter { background: var(--color-primary-2); color: #fff; border-color: var(--color-primary-2); }
+    .btn-quick-filter.active-filter-orange { background: #ef6c00; color: #fff; border-color: #ef6c00; }
+
     .loading-bar {
       position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary-2);
       width: 0%; transition: width 0.3s; z-index: 99999;
@@ -137,7 +173,7 @@
     @media print {
       @page { size: A4 landscape; margin: 8mm; }
       body { background: #ffffff; }
-      .panel, .toolbar, .filters, .chart-card, .kpi-grid, .header-title, .chart-overlay { display: none !important; }
+      .panel, .toolbar, .filters, .chart-card, .kpi-grid, .header-title, .chart-overlay, .quick-filters { display: none !important; }
       .container { max-width: 100%; padding: 0; }
       .table-card { box-shadow: none; border: 0; border-radius: 0; }
       table { min-width: 100%; font-size: 11px; }
@@ -153,7 +189,15 @@
     <section class="header">
       <div class="header-title">
         <h1>Painel Mensal de Eventos</h1>
+        <button id="btnModoVisualizacao" class="btn-view-mode" title="Alternar modo visualização">
+          👁️ Modo Visualização
+        </button>
       </div>
+
+      <div class="view-mode-banner" id="viewModeBanner">
+        👁️ Modo Visualização ativo — edição de eventos desabilitada
+      </div>
+
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-card-total">
@@ -211,8 +255,8 @@
       </div>
     </section>
 
-    <section class="layout">
-      <aside class="panel">
+    <section class="layout" id="mainLayout">
+      <aside class="panel" id="formPanel">
         <h2 id="formTitulo">Lançar evento</h2>
         <form id="eventoForm">
           <div class="form-grid">
@@ -225,7 +269,7 @@
             </div>
             <div class="field">
               <label for="tipoEvento">Tipo de evento</label>
-              <select id="tipoEvento"><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
+              <select id="tipoEvento"><option>Colisão</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
             </div>
             <div class="field"><label for="oficina">Oficina</label><input id="oficina" required /></div>
             <div class="field"><label for="dataEntrada">Data de entrada</label><input id="dataEntrada" type="date" required /></div>
@@ -252,7 +296,7 @@
       <main class="charts">
         <div class="table-card">
           <h2>Controles e filtros</h2>
-          <div class="toolbar">
+          <div class="toolbar" id="editToolbar">
             <button class="btn-secondary" id="exportarJson">💾 Backup JSON</button>
             <label class="file-label btn-success" for="importarJson">⬆️ Subir backup JSON</label>
             <input id="importarJson" type="file" accept="application/json" class="hidden" />
@@ -266,9 +310,23 @@
             </div>
             <div class="field">
               <label for="filtroTipoEvento">Tipo de evento</label>
-              <select id="filtroTipoEvento"><option value="">Todos</option><option>Regular</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
+              <select id="filtroTipoEvento"><option value="">Todos</option><option>Colisão</option><option>Negado</option><option>Vidro</option><option>Acordo</option><option>Furto</option></select>
             </div>
             <div class="field"><label for="filtroMes">Mês referência</label><input id="filtroMes" type="month" /></div>
+          </div>
+
+          <!-- Filtros rápidos -->
+          <div class="quick-filters">
+            <span style="font-size:0.82rem;font-weight:600;color:var(--color-text-muted);align-self:center;">Filtros rápidos:</span>
+            <button class="btn-quick-filter" id="btnFiltroAbertos" title="Exibir somente eventos sem data de saída">
+              🔴 Em aberto
+            </button>
+            <button class="btn-quick-filter" id="btnFiltroAcordos" title="Exibir somente eventos do tipo Acordo">
+              🤝 Acordos
+            </button>
+            <button class="btn-quick-filter" id="btnLimparQuickFilter" title="Limpar filtros rápidos">
+              ✕ Limpar
+            </button>
           </div>
         </div>
 
@@ -290,7 +348,7 @@
                   <th>Placa</th><th>Oficina</th><th>Entrada</th><th>Saída</th>
                   <th>Mão de obra</th><th>Peças</th><th>Cota</th><th>Negado</th>
                   <th>Qtd. vidros</th><th>Valor vidros</th><th>Qtd. acordos</th><th>Valor acordos</th>
-                  <th>Total líquido</th><th>Ações</th>
+                  <th>Total líquido</th><th id="colAcoes">Ações</th>
                 </tr>
               </thead>
               <tbody id="tabelaEventos"></tbody>
@@ -331,6 +389,11 @@
     let chartMes, chartPessoa, chartTipoEvento, chartCustos, chartFilial;
     let editingId = null;
     let overlayChart = null;
+    let modoVisualizacao = false;
+
+    // Filtros rápidos
+    let quickFilterAbertos = false;
+    let quickFilterAcordos = false;
 
     const form          = document.getElementById('eventoForm');
     const tabela        = document.getElementById('tabelaEventos');
@@ -347,11 +410,25 @@
     const overlayClose  = document.getElementById('chartOverlayClose');
     const loadingBar    = document.getElementById('loadingBar');
     const toastEl       = document.getElementById('toast');
+    const formPanel     = document.getElementById('formPanel');
+    const mainLayout    = document.getElementById('mainLayout');
+    const btnModo       = document.getElementById('btnModoVisualizacao');
+    const viewBanner    = document.getElementById('viewModeBanner');
+    const editToolbar   = document.getElementById('editToolbar');
+    const btnFiltroAbertos = document.getElementById('btnFiltroAbertos');
+    const btnFiltroAcordos = document.getElementById('btnFiltroAcordos');
+    const btnLimparQuick   = document.getElementById('btnLimparQuickFilter');
 
     const currency = v => Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const num = v => Number(v||0);
     const formatDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '';
     const monthKey = d => d ? d.slice(0,7) : 'Sem data';
+
+    // Normaliza nomes antigos "Regular" → "Colisão" em memória sem tocar no banco
+    function normalizeTipoEvento(tipo) {
+      if (!tipo) return tipo;
+      return tipo === 'Regular' ? 'Colisão' : tipo;
+    }
 
     function showLoading(on) { loadingBar.style.width = on ? '70%' : '100%'; if (!on) setTimeout(()=>loadingBar.style.width='0%',300); }
     function toast(msg, err=false) {
@@ -361,11 +438,68 @@
       setTimeout(()=>toastEl.classList.remove('show'), 3000);
     }
 
+    // ---- Modo Visualização ----
+    function applyViewMode() {
+      if (modoVisualizacao) {
+        formPanel.classList.add('hidden');
+        mainLayout.classList.add('view-mode');
+        viewBanner.classList.add('active');
+        btnModo.classList.add('active');
+        btnModo.textContent = '✏️ Modo Edição';
+        editToolbar.style.opacity = '0.4';
+        editToolbar.style.pointerEvents = 'none';
+      } else {
+        formPanel.classList.remove('hidden');
+        mainLayout.classList.remove('view-mode');
+        viewBanner.classList.remove('active');
+        btnModo.classList.remove('active');
+        btnModo.textContent = '👁️ Modo Visualização';
+        editToolbar.style.opacity = '';
+        editToolbar.style.pointerEvents = '';
+      }
+      renderTable();
+    }
+
+    btnModo.addEventListener('click', () => {
+      modoVisualizacao = !modoVisualizacao;
+      applyViewMode();
+    });
+
+    // ---- Filtros Rápidos ----
+    btnFiltroAbertos.addEventListener('click', () => {
+      quickFilterAbertos = !quickFilterAbertos;
+      if (quickFilterAbertos) quickFilterAcordos = false;
+      updateQuickFilterButtons();
+      refreshAll();
+    });
+
+    btnFiltroAcordos.addEventListener('click', () => {
+      quickFilterAcordos = !quickFilterAcordos;
+      if (quickFilterAcordos) quickFilterAbertos = false;
+      updateQuickFilterButtons();
+      refreshAll();
+    });
+
+    btnLimparQuick.addEventListener('click', () => {
+      quickFilterAbertos = false;
+      quickFilterAcordos = false;
+      updateQuickFilterButtons();
+      refreshAll();
+    });
+
+    function updateQuickFilterButtons() {
+      btnFiltroAbertos.className = 'btn-quick-filter' + (quickFilterAbertos ? ' active-filter' : '');
+      btnFiltroAcordos.className = 'btn-quick-filter' + (quickFilterAcordos ? ' active-filter-orange' : '');
+    }
+
+    // ---- API ----
     async function apiGet() {
       showLoading(true);
       try {
         const r = await fetch(API);
-        eventos = await r.json();
+        const raw = await r.json();
+        // Normaliza "Regular" → "Colisão" em memória
+        eventos = raw.map(e => ({ ...e, tipoEvento: normalizeTipoEvento(e.tipoEvento) }));
       } catch(e) { toast('Erro ao carregar dados', true); }
       showLoading(false);
     }
@@ -413,7 +547,9 @@
         document.getElementById(id).value = ev[id] || '';
       });
       document.getElementById('tipoPessoa').value = ev.tipoPessoa || 'Associado';
-      document.getElementById('tipoEvento').value = ev.tipoEvento || 'Regular';
+      // Normaliza ao preencher form
+      const tipo = normalizeTipoEvento(ev.tipoEvento) || 'Colisão';
+      document.getElementById('tipoEvento').value = tipo;
       ['maoObra','pecas','cota','qtdVidros','valorVidros','qtdAcordos','valorAcordos'].forEach(id=>{
         document.getElementById(id).value = ev[id] ?? 0;
       });
@@ -436,7 +572,12 @@
         const okPessoa = !filtroPessoa.value || item.tipoPessoa === filtroPessoa.value;
         const okTipo   = !filtroTipoEvento.value || item.tipoEvento === filtroTipoEvento.value;
         const okMes    = !filtroMes.value || monthKey(item.dataEntrada) === filtroMes.value;
-        return okFilial && okPessoa && okTipo && okMes;
+
+        // Filtros rápidos
+        const okAbertos = !quickFilterAbertos || !item.dataSaida;
+        const okAcordos = !quickFilterAcordos || item.tipoEvento === 'Acordo';
+
+        return okFilial && okPessoa && okTipo && okMes && okAbertos && okAcordos;
       });
     }
 
@@ -449,8 +590,15 @@
 
     function renderTable() {
       const data = getFilteredEvents();
+      const showActions = !modoVisualizacao;
+      document.getElementById('colAcoes').style.display = showActions ? '' : 'none';
+
       tabela.innerHTML = data.map(item => {
         const liquido = (item.maoObra + item.pecas + item.valorVidros + item.valorAcordos) - item.cota;
+        const acoes = showActions
+          ? `<button class="btn-warning" onclick="editEvent('${item.id}')">Editar</button>
+             <button class="btn-danger" onclick="removeEvent('${item.id}')">Excluir</button>`
+          : `<span style="color:var(--color-text-muted);font-size:0.8rem;">—</span>`;
         return `<tr>
           <td>${item.filial}</td><td>${item.nome}</td>
           <td><span class="badge ${item.tipoPessoa==='Associado'?'associado':'terceiro'}">${item.tipoPessoa}</span></td>
@@ -459,10 +607,7 @@
           <td>${currency(item.maoObra)}</td><td>${currency(item.pecas)}</td><td>${currency(item.cota)}</td>
           <td>${item.numeroNegado||'-'}</td><td>${item.qtdVidros}</td><td>${currency(item.valorVidros)}</td>
           <td>${item.qtdAcordos}</td><td>${currency(item.valorAcordos)}</td><td>${currency(liquido)}</td>
-          <td>
-            <button class="btn-warning" onclick="editEvent('${item.id}')">Editar</button>
-            <button class="btn-danger" onclick="removeEvent('${item.id}')">Excluir</button>
-          </td>
+          <td style="${showActions?'':'display:none'}">${acoes}</td>
         </tr>`;
       }).join('');
     }
@@ -495,16 +640,12 @@
 
     function buildChartsConfigs() {
       const data = getFilteredEvents();
-      const byMonth={}, byPessoa={Associado:0,Terceiro:0}, byTipo={Regular:0,Negado:0,Vidro:0,Acordo:0,Furto:0}, byFilial={};
+      const byMonth={}, byPessoa={Associado:0,Terceiro:0}, byTipo={}, byFilial={};
       const totals={'Mão de obra':0,'Peças':0,'Vidros':0,'Acordos':0};
       data.forEach(e=>{
         const m=monthKey(e.dataEntrada); byMonth[m]=(byMonth[m]||0)+1;
         byPessoa[e.tipoPessoa]=(byPessoa[e.tipoPessoa]||0)+1;
-        if (byTipo[e.tipoEvento] !== undefined) {
-          byTipo[e.tipoEvento]++;
-        } else {
-          byTipo[e.tipoEvento] = 1;
-        }
+        byTipo[e.tipoEvento]=(byTipo[e.tipoEvento]||0)+1;
         byFilial[e.filial]=(byFilial[e.filial]||0)+1;
         totals['Mão de obra']+=e.maoObra; totals['Peças']+=e.pecas;
         totals['Vidros']+=e.valorVidros; totals['Acordos']+=e.valorAcordos;
@@ -567,6 +708,7 @@
     });
 
     form.addEventListener('submit', async e => {
+      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
       e.preventDefault();
       btnSalvar.disabled = true;
       showLoading(true);
@@ -590,10 +732,10 @@
     });
 
     document.getElementById('limparForm').addEventListener('click', clearForm);
-
     btnCancelarEdicao.addEventListener('click', clearForm);
 
     document.getElementById('limparTudo').addEventListener('click', () => {
+      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
       document.getElementById('modalApagarBase').style.display = 'flex';
     });
     document.getElementById('btnCancelarApagar').addEventListener('click', () => {
@@ -624,6 +766,7 @@
     });
 
     document.getElementById('importarJson').addEventListener('change', async e => {
+      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
       const file = e.target.files[0];
       if (!file) return;
       try {
@@ -648,6 +791,7 @@
     );
 
     window.removeEvent = async function(id) {
+      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
       if (!confirm('Excluir este evento?')) return;
       showLoading(true);
       try {
@@ -662,6 +806,7 @@
     };
 
     window.editEvent = function(id) {
+      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
       const ev = eventos.find(e=>e.id===id);
       if (!ev) return;
       editingId = id;
