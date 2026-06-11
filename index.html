@@ -300,7 +300,6 @@
             <button class="btn-secondary" id="exportarJson">💾 Backup JSON</button>
             <label class="file-label btn-success" for="importarJson">⬆️ Subir backup JSON</label>
             <input id="importarJson" type="file" accept="application/json" class="hidden" />
-            <button class="btn-danger" id="limparTudo">🗑️ Apagar base</button>
           </div>
           <div class="filters">
             <div class="field"><label for="filtroFilial">Filial</label><select id="filtroFilial"><option value="">Todas</option></select></div>
@@ -359,19 +358,6 @@
     </section>
   </div>
 
-  <!-- Modal apagar base -->
-  <div id="modalApagarBase" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-    <div style="background:white;padding:30px;border-radius:10px;max-width:400px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.3);">
-      <h3 style="margin-top:0;color:#c62828;">⚠️ Atenção</h3>
-      <p style="margin:20px 0;font-size:16px;">Tem certeza que deseja apagar toda a base de dados?</p>
-      <p style="margin:10px 0;font-size:14px;color:#666;">Esta ação não pode ser desfeita!</p>
-      <div style="margin-top:25px;display:flex;gap:10px;justify-content:center;">
-        <button id="btnCancelarApagar" style="padding:10px 20px;background:#666;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;">Cancelar</button>
-        <button id="btnConfirmarApagar" style="padding:10px 20px;background:#c62828;color:white;border:none;border-radius:5px;cursor:pointer;font-size:14px;">Sim, apagar tudo</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Chart overlay -->
   <div class="chart-overlay" id="chartOverlay">
     <div class="chart-overlay-inner">
@@ -389,7 +375,9 @@
     let chartMes, chartPessoa, chartTipoEvento, chartCustos, chartFilial;
     let editingId = null;
     let overlayChart = null;
-    let modoVisualizacao = false;
+
+    // Inicia SEMPRE em modo visualização
+    let modoVisualizacao = true;
 
     // Filtros rápidos
     let quickFilterAbertos = false;
@@ -547,7 +535,6 @@
         document.getElementById(id).value = ev[id] || '';
       });
       document.getElementById('tipoPessoa').value = ev.tipoPessoa || 'Associado';
-      // Normaliza ao preencher form
       const tipo = normalizeTipoEvento(ev.tipoEvento) || 'Colisão';
       document.getElementById('tipoEvento').value = tipo;
       ['maoObra','pecas','cota','qtdVidros','valorVidros','qtdAcordos','valorAcordos'].forEach(id=>{
@@ -572,11 +559,8 @@
         const okPessoa = !filtroPessoa.value || item.tipoPessoa === filtroPessoa.value;
         const okTipo   = !filtroTipoEvento.value || item.tipoEvento === filtroTipoEvento.value;
         const okMes    = !filtroMes.value || monthKey(item.dataEntrada) === filtroMes.value;
-
-        // Filtros rápidos
         const okAbertos = !quickFilterAbertos || !item.dataSaida;
         const okAcordos = !quickFilterAcordos || item.tipoEvento === 'Acordo';
-
         return okFilial && okPessoa && okTipo && okMes && okAbertos && okAcordos;
       });
     }
@@ -592,7 +576,6 @@
       const data = getFilteredEvents();
       const showActions = !modoVisualizacao;
       document.getElementById('colAcoes').style.display = showActions ? '' : 'none';
-
       tabela.innerHTML = data.map(item => {
         const liquido = (item.maoObra + item.pecas + item.valorVidros + item.valorAcordos) - item.cota;
         const acoes = showActions
@@ -690,12 +673,14 @@
       updateCharts();
     }
 
-    // Eventos de UI
     overlayClose.addEventListener('click', closeChartFullscreen);
     overlay.addEventListener('click', e=>{ if(e.target===overlay) closeChartFullscreen(); });
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeChartFullscreen(); });
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Aplica modo visualização inicial
+      applyViewMode();
+
       document.querySelectorAll('.chart-card').forEach(card => {
         const chartId = card.getAttribute('data-chart-id');
         const titleText = card.querySelector('h2')?.childNodes[0]?.textContent.trim() || 'Gráfico';
@@ -733,27 +718,6 @@
 
     document.getElementById('limparForm').addEventListener('click', clearForm);
     btnCancelarEdicao.addEventListener('click', clearForm);
-
-    document.getElementById('limparTudo').addEventListener('click', () => {
-      if (modoVisualizacao) { toast('Modo Visualização ativo — edição desabilitada', true); return; }
-      document.getElementById('modalApagarBase').style.display = 'flex';
-    });
-    document.getElementById('btnCancelarApagar').addEventListener('click', () => {
-      document.getElementById('modalApagarBase').style.display = 'none';
-    });
-    document.getElementById('btnConfirmarApagar').addEventListener('click', async () => {
-      document.getElementById('modalApagarBase').style.display = 'none';
-      showLoading(true);
-      try {
-        await Promise.all(eventos.map(e => apiDelete(e.id)));
-        await apiGet();
-        refreshAll();
-        toast('Base apagada!');
-      } catch(err) {
-        toast('Erro ao apagar: ' + err.message, true);
-      }
-      showLoading(false);
-    });
 
     document.getElementById('exportarJson').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(eventos, null, 2)], {type:'application/json'});
