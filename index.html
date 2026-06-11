@@ -32,8 +32,6 @@
     .header { margin-bottom: var(--space-4); }
     .header-title { margin-bottom: var(--space-3); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
     .header-title h1 { font-size: var(--text-lg); font-weight: 700; color: var(--color-text); }
-
-    /* Modo Visualização banner */
     .view-mode-banner {
       display: none;
       align-items: center;
@@ -48,11 +46,8 @@
       margin-bottom: var(--space-3);
     }
     .view-mode-banner.active { display: flex; }
-
-    /* Botão modo visualização */
     .btn-view-mode { background: #eaf2ff; color: var(--color-primary); }
     .btn-view-mode.active { background: #fff3cd; color: #795500; border: 1.5px solid #ffe082; }
-
     .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
     .kpi-card {
       background: rgba(255,255,255,.94); border: 1px solid rgba(19,34,56,.1);
@@ -118,8 +113,6 @@
     .hidden { display: none; }
     .footer-note { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
     .filters { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-3); }
-
-    /* Filtros rápidos */
     .quick-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
     .btn-quick-filter {
       border: 1.5px solid var(--color-border); border-radius: 999px;
@@ -131,7 +124,6 @@
     .btn-quick-filter:hover { border-color: var(--color-primary-2); color: var(--color-primary); background: #eaf2ff; }
     .btn-quick-filter.active-filter { background: var(--color-primary-2); color: #fff; border-color: var(--color-primary-2); }
     .btn-quick-filter.active-filter-orange { background: #ef6c00; color: #fff; border-color: #ef6c00; }
-
     .loading-bar {
       position: fixed; top: 0; left: 0; height: 3px; background: var(--color-primary-2);
       width: 0%; transition: width 0.3s; z-index: 99999;
@@ -313,19 +305,11 @@
             </div>
             <div class="field"><label for="filtroMes">Mês referência</label><input id="filtroMes" type="month" /></div>
           </div>
-
-          <!-- Filtros rápidos -->
           <div class="quick-filters">
             <span style="font-size:0.82rem;font-weight:600;color:var(--color-text-muted);align-self:center;">Filtros rápidos:</span>
-            <button class="btn-quick-filter" id="btnFiltroAbertos" title="Exibir somente eventos sem data de saída">
-              🔴 Em aberto
-            </button>
-            <button class="btn-quick-filter" id="btnFiltroAcordos" title="Exibir somente eventos do tipo Acordo">
-              🤝 Acordos
-            </button>
-            <button class="btn-quick-filter" id="btnLimparQuickFilter" title="Limpar filtros rápidos">
-              ✕ Limpar
-            </button>
+            <button class="btn-quick-filter" id="btnFiltroAbertos" title="Exibir somente eventos sem data de saída">🔴 Em aberto</button>
+            <button class="btn-quick-filter" id="btnFiltroAcordos" title="Exibir somente eventos do tipo Acordo">🤝 Acordos</button>
+            <button class="btn-quick-filter" id="btnLimparQuickFilter" title="Limpar filtros rápidos">✕ Limpar</button>
           </div>
         </div>
 
@@ -358,7 +342,6 @@
     </section>
   </div>
 
-  <!-- Chart overlay -->
   <div class="chart-overlay" id="chartOverlay">
     <div class="chart-overlay-inner">
       <div class="chart-overlay-header">
@@ -376,33 +359,35 @@
     let editingId = null;
     let overlayChart = null;
 
-    // Inicia SEMPRE em modo visualização
-    let modoVisualizacao = true;
+    // ---- Modo Visualização: persiste via sessionStorage durante a sessão ----
+    // Na primeira abertura (sem valor na sessão), inicia em modo visualização.
+    // A escolha do usuário é preservada enquanto a aba estiver aberta.
+    // Salvar/editar/cancelar NUNCA alteram este estado.
+    let modoVisualizacao = sessionStorage.getItem('modoViz') !== 'false';
 
-    // Filtros rápidos
     let quickFilterAbertos = false;
     let quickFilterAcordos = false;
 
-    const form          = document.getElementById('eventoForm');
-    const tabela        = document.getElementById('tabelaEventos');
-    const filtroFilial  = document.getElementById('filtroFilial');
-    const filtroPessoa  = document.getElementById('filtroPessoa');
+    const form             = document.getElementById('eventoForm');
+    const tabela           = document.getElementById('tabelaEventos');
+    const filtroFilial     = document.getElementById('filtroFilial');
+    const filtroPessoa     = document.getElementById('filtroPessoa');
     const filtroTipoEvento = document.getElementById('filtroTipoEvento');
-    const filtroMes     = document.getElementById('filtroMes');
-    const formTitulo    = document.getElementById('formTitulo');
-    const btnSalvar     = document.getElementById('btnSalvar');
-    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    const overlay       = document.getElementById('chartOverlay');
-    const overlayCanvas = document.getElementById('chartOverlayCanvas');
-    const overlayTitle  = document.getElementById('chartOverlayTitle');
-    const overlayClose  = document.getElementById('chartOverlayClose');
-    const loadingBar    = document.getElementById('loadingBar');
-    const toastEl       = document.getElementById('toast');
-    const formPanel     = document.getElementById('formPanel');
-    const mainLayout    = document.getElementById('mainLayout');
-    const btnModo       = document.getElementById('btnModoVisualizacao');
-    const viewBanner    = document.getElementById('viewModeBanner');
-    const editToolbar   = document.getElementById('editToolbar');
+    const filtroMes        = document.getElementById('filtroMes');
+    const formTitulo       = document.getElementById('formTitulo');
+    const btnSalvar        = document.getElementById('btnSalvar');
+    const btnCancelarEdicao= document.getElementById('btnCancelarEdicao');
+    const overlay          = document.getElementById('chartOverlay');
+    const overlayCanvas    = document.getElementById('chartOverlayCanvas');
+    const overlayTitle     = document.getElementById('chartOverlayTitle');
+    const overlayClose     = document.getElementById('chartOverlayClose');
+    const loadingBar       = document.getElementById('loadingBar');
+    const toastEl          = document.getElementById('toast');
+    const formPanel        = document.getElementById('formPanel');
+    const mainLayout       = document.getElementById('mainLayout');
+    const btnModo          = document.getElementById('btnModoVisualizacao');
+    const viewBanner       = document.getElementById('viewModeBanner');
+    const editToolbar      = document.getElementById('editToolbar');
     const btnFiltroAbertos = document.getElementById('btnFiltroAbertos');
     const btnFiltroAcordos = document.getElementById('btnFiltroAcordos');
     const btnLimparQuick   = document.getElementById('btnLimparQuickFilter');
@@ -412,7 +397,6 @@
     const formatDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '';
     const monthKey = d => d ? d.slice(0,7) : 'Sem data';
 
-    // Normaliza nomes antigos "Regular" → "Colisão" em memória sem tocar no banco
     function normalizeTipoEvento(tipo) {
       if (!tipo) return tipo;
       return tipo === 'Regular' ? 'Colisão' : tipo;
@@ -426,7 +410,8 @@
       setTimeout(()=>toastEl.classList.remove('show'), 3000);
     }
 
-    // ---- Modo Visualização ----
+    // Aplica visualmente o modo — chamado apenas quando o modo MUDA ou na inicialização.
+    // NUNCA deve ser chamado dentro de salvar/editar/limpar.
     function applyViewMode() {
       if (modoVisualizacao) {
         formPanel.classList.add('hidden');
@@ -448,8 +433,11 @@
       renderTable();
     }
 
+    // Só o botão altera o modo — grava na sessão para persistir durante a aba
     btnModo.addEventListener('click', () => {
       modoVisualizacao = !modoVisualizacao;
+      sessionStorage.setItem('modoViz', String(!modoVisualizacao === false ? modoVisualizacao : modoVisualizacao));
+      sessionStorage.setItem('modoViz', modoVisualizacao ? 'true' : 'false');
       applyViewMode();
     });
 
@@ -460,21 +448,18 @@
       updateQuickFilterButtons();
       refreshAll();
     });
-
     btnFiltroAcordos.addEventListener('click', () => {
       quickFilterAcordos = !quickFilterAcordos;
       if (quickFilterAcordos) quickFilterAbertos = false;
       updateQuickFilterButtons();
       refreshAll();
     });
-
     btnLimparQuick.addEventListener('click', () => {
       quickFilterAbertos = false;
       quickFilterAcordos = false;
       updateQuickFilterButtons();
       refreshAll();
     });
-
     function updateQuickFilterButtons() {
       btnFiltroAbertos.className = 'btn-quick-filter' + (quickFilterAbertos ? ' active-filter' : '');
       btnFiltroAcordos.className = 'btn-quick-filter' + (quickFilterAcordos ? ' active-filter-orange' : '');
@@ -486,22 +471,18 @@
       try {
         const r = await fetch(API);
         const raw = await r.json();
-        // Normaliza "Regular" → "Colisão" em memória
         eventos = raw.map(e => ({ ...e, tipoEvento: normalizeTipoEvento(e.tipoEvento) }));
       } catch(e) { toast('Erro ao carregar dados', true); }
       showLoading(false);
     }
-
     async function apiPost(ev) {
       const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ev) });
       if (!r.ok) throw new Error(await r.text());
     }
-
     async function apiPut(ev) {
       const r = await fetch(API, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ev) });
       if (!r.ok) throw new Error(await r.text());
     }
-
     async function apiDelete(id) {
       const r = await fetch(API+'?id='+id, { method:'DELETE' });
       if (!r.ok) throw new Error(await r.text());
@@ -542,6 +523,7 @@
       });
     }
 
+    // clearForm nunca toca no modoVisualizacao
     function clearForm() {
       form.reset();
       ['maoObra','pecas','cota','qtdVidros','valorVidros','qtdAcordos','valorAcordos'].forEach(id=>{
@@ -555,10 +537,10 @@
 
     function getFilteredEvents() {
       return eventos.filter(item => {
-        const okFilial = !filtroFilial.value || item.filial === filtroFilial.value;
-        const okPessoa = !filtroPessoa.value || item.tipoPessoa === filtroPessoa.value;
-        const okTipo   = !filtroTipoEvento.value || item.tipoEvento === filtroTipoEvento.value;
-        const okMes    = !filtroMes.value || monthKey(item.dataEntrada) === filtroMes.value;
+        const okFilial  = !filtroFilial.value || item.filial === filtroFilial.value;
+        const okPessoa  = !filtroPessoa.value || item.tipoPessoa === filtroPessoa.value;
+        const okTipo    = !filtroTipoEvento.value || item.tipoEvento === filtroTipoEvento.value;
+        const okMes     = !filtroMes.value || monthKey(item.dataEntrada) === filtroMes.value;
         const okAbertos = !quickFilterAbertos || !item.dataSaida;
         const okAcordos = !quickFilterAcordos || item.tipoEvento === 'Acordo';
         return okFilial && okPessoa && okTipo && okMes && okAbertos && okAcordos;
@@ -635,21 +617,21 @@
       });
       const mL=Object.keys(byMonth).sort(), fL=Object.keys(byFilial).sort();
       return {
-        mes:      { type:'bar', data:{ labels:mL, datasets:[{label:'Eventos',data:mL.map(m=>byMonth[m]),backgroundColor:'#0b62d6',borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
-        pessoa:   { type:'doughnut', data:{ labels:Object.keys(byPessoa), datasets:[{data:Object.values(byPessoa),backgroundColor:['#0f4c97','#c62828']}]}, options:{responsive:true} },
+        mes:       { type:'bar', data:{ labels:mL, datasets:[{label:'Eventos',data:mL.map(m=>byMonth[m]),backgroundColor:'#0b62d6',borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
+        pessoa:    { type:'doughnut', data:{ labels:Object.keys(byPessoa), datasets:[{data:Object.values(byPessoa),backgroundColor:['#0f4c97','#c62828']}]}, options:{responsive:true} },
         tipoEvento:{ type:'bar', data:{ labels:Object.keys(byTipo), datasets:[{label:'Eventos',data:Object.values(byTipo),backgroundColor:['#0f4c97','#c62828','#ef5350','#4f8fe8','#7b2d8b'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
-        custos:   { type:'bar', data:{ labels:Object.keys(totals), datasets:[{label:'Valor',data:Object.values(totals),backgroundColor:['#0f4c97','#4f8fe8','#c62828','#ef5350'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
-        filial:   { type:'bar', data:{ labels:fL, datasets:[{label:'Eventos',data:fL.map(f=>byFilial[f]),backgroundColor:'#c62828',borderRadius:10}]}, options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}} }
+        custos:    { type:'bar', data:{ labels:Object.keys(totals), datasets:[{label:'Valor',data:Object.values(totals),backgroundColor:['#0f4c97','#4f8fe8','#c62828','#ef5350'],borderRadius:10}]}, options:{responsive:true,plugins:{legend:{display:false}}} },
+        filial:    { type:'bar', data:{ labels:fL, datasets:[{label:'Eventos',data:fL.map(f=>byFilial[f]),backgroundColor:'#c62828',borderRadius:10}]}, options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}}} }
       };
     }
 
     function updateCharts() {
       const c = buildChartsConfigs();
-      chartMes = makeOrUpdateChart(chartMes,'chartMes',c.mes);
-      chartPessoa = makeOrUpdateChart(chartPessoa,'chartPessoa',c.pessoa);
+      chartMes        = makeOrUpdateChart(chartMes,'chartMes',c.mes);
+      chartPessoa     = makeOrUpdateChart(chartPessoa,'chartPessoa',c.pessoa);
       chartTipoEvento = makeOrUpdateChart(chartTipoEvento,'chartTipoEvento',c.tipoEvento);
-      chartCustos = makeOrUpdateChart(chartCustos,'chartCustos',c.custos);
-      chartFilial = makeOrUpdateChart(chartFilial,'chartFilial',c.filial);
+      chartCustos     = makeOrUpdateChart(chartCustos,'chartCustos',c.custos);
+      chartFilial     = makeOrUpdateChart(chartFilial,'chartFilial',c.filial);
     }
 
     function openChartFullscreen(chartId, titleText) {
@@ -660,12 +642,12 @@
       overlay.classList.add('active');
       overlayChart = new Chart(overlayCanvas, config);
     }
-
     function closeChartFullscreen() {
       overlay.classList.remove('active');
       if (overlayChart) { overlayChart.destroy(); overlayChart=null; }
     }
 
+    // refreshAll atualiza dados/tabela/KPIs/gráficos — NUNCA altera modoVisualizacao
     function refreshAll() {
       updateFilialFilter();
       renderTable();
@@ -678,13 +660,11 @@
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeChartFullscreen(); });
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Aplica modo visualização inicial
       applyViewMode();
-
       document.querySelectorAll('.chart-card').forEach(card => {
-        const chartId = card.getAttribute('data-chart-id');
+        const chartId   = card.getAttribute('data-chart-id');
         const titleText = card.querySelector('h2')?.childNodes[0]?.textContent.trim() || 'Gráfico';
-        const canvas = card.querySelector('canvas');
+        const canvas    = card.querySelector('canvas');
         if (canvas && chartId) {
           canvas.style.cursor = 'zoom-in';
           canvas.addEventListener('click', () => openChartFullscreen(chartId, titleText));
@@ -707,8 +687,8 @@
           toast('Evento salvo!');
         }
         await apiGet();
-        refreshAll();
-        clearForm();
+        refreshAll();   // apenas atualiza dados — não altera modo
+        clearForm();    // apenas limpa campos — não altera modo
       } catch(err) {
         toast('Erro ao salvar: ' + err.message, true);
       }
@@ -721,9 +701,9 @@
 
     document.getElementById('exportarJson').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(eventos, null, 2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
       a.download = `porto-mais-eventos-${new Date().toISOString().slice(0,10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
@@ -737,9 +717,7 @@
         const imported = JSON.parse(await file.text());
         if (!Array.isArray(imported)) throw new Error('Formato inválido');
         showLoading(true);
-        for (const ev of imported) {
-          await apiPost(ev).catch(()=>{});
-        }
+        for (const ev of imported) { await apiPost(ev).catch(()=>{}); }
         await apiGet();
         refreshAll();
         toast(`${imported.length} eventos importados!`);
@@ -776,12 +754,11 @@
       editingId = id;
       fillFormFromEvent(ev);
       formTitulo.textContent = 'Editar evento';
-      btnSalvar.textContent = 'Salvar alterações';
+      btnSalvar.textContent  = 'Salvar alterações';
       btnCancelarEdicao.classList.remove('hidden');
       window.scrollTo({top:0,behavior:'smooth'});
     };
 
-    // Inicializa
     apiGet().then(refreshAll);
   </script>
 </body>
